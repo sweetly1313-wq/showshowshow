@@ -1,0 +1,7 @@
+import {NextResponse} from 'next/server';
+import {database} from '@/lib/server';
+import {samples} from '@/lib/data';
+export const preferredRegion='icn1';
+export const dynamic='force-dynamic';
+export async function GET(){const db=database(); if(!db)return NextResponse.json({posts:samples,demo:true}); const {data,error}=await db.from('posts').select('*').order('created_at',{ascending:false}).limit(100); if(error)return NextResponse.json({error:'작업을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'},{status:503}); return NextResponse.json({posts:data,demo:false});}
+export async function POST(request:Request){const db=database();if(!db)return NextResponse.json({error:'현재 샘플 전시 중입니다. 게시물 등록은 데이터베이스 연결 후 사용할 수 있어요.'},{status:503});let body;try{body=await request.json();}catch{return NextResponse.json({error:'올바르지 않은 요청입니다.'},{status:400});}const {title,content,author,category}=body; if(typeof title!=='string'||!title.trim()||title.length>80||typeof content!=='string'||!content.trim()||content.length>3000||typeof author!=='string'||!author.trim()||author.length>30||!['브랜딩','UI/UX','3D & 아트','그래픽','기타'].includes(category))return NextResponse.json({error:'제목, 작성자, 내용을 올바르게 입력해 주세요.'},{status:400}); const {data,error}=await db.from('posts').insert({title:title.trim(),content:content.trim(),author:author.trim(),category,art:Math.floor(Math.random()*6)}).select().single();if(error)return NextResponse.json({error:'등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'},{status:503});return NextResponse.json({post:data},{status:201});}
